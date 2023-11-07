@@ -1,14 +1,17 @@
 from twitchio.ext.commands import Bot
 from asyncio import *
 import websockets
+import time
 import random
+
+
 
 #create the melba class
 class melba(Bot):
     
     MAX_NUM_MSG = 7
     MELBA_TOKEN = ""
-    INITIAL_CHANNEL = "vedal987"
+    INITIAL_CHANNEL = ""
     MSG_OUTPUT_NAME = "twitchout.txt"
     WEBSOCKET_URI = "localhost"
     
@@ -37,7 +40,6 @@ class melba(Bot):
         #if there are less lines than the max_message delete the first message(oldest) then add the new one
         with open(melba.MSG_OUTPUT_NAME,'r',encoding='utf-8') as r:
             line_count = r.readlines()
-        #if not just add the new message
         
         if len(line_count) >= melba.MAX_NUM_MSG:
             line_count.pop(0)
@@ -48,13 +50,13 @@ class melba(Bot):
             
             with open(melba.MSG_OUTPUT_NAME,'w',encoding = 'utf-8') as f:
                 f.writelines(line_count)
-            
         else:
             with open(melba.MSG_OUTPUT_NAME,'a',encoding = 'utf-8') as f:
                 f.write(user_msg)
         #Then check the twitchout.txt and how many lines it is
         
-        melba.choose_random_msg()
+        if len(line_count) == melba.MAX_NUM_MSG:
+            melba.choose_random_msg()
         
         
         
@@ -76,11 +78,12 @@ class melba(Bot):
             w.writelines(lines)
         
         print(msg)   
-                 
+        
         #TODO: OPEN THE WEBHOOKS ONCE I GET THE BACKEND ON MY PC
         #send the string to websocket
         #websockets.serve(msg)
     
     
+
 bot = melba()
 create_task(bot.run())
