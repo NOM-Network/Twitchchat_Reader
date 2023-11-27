@@ -1,12 +1,7 @@
 # Twitchchat_Reader
 
-Create a virtual enviroment.
-also create a node project.
+### Install the twitchlib from your preferred package manager.
+### Also have ASP.NET installed.
 
-then run these commands:
 
-Python:
-```pip3 install twitchio```
-
-Nodejs:
-```npm install api --save```
+#### also you need to make your own websocket server. microsoft has tutorials on that
