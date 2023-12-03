@@ -22,17 +22,25 @@ namespace Melba_Twitch
 
     class Bot
     {
+
+        const string channel_name = "";
+        const string oauth_token = "";
+        const string channel_id = "";
+        
         List<string> messages = new List<string>();
         List<string> Special_messages = new List<string>();
         int maxline_count = 7; //Changable
 
-        bool read_sp = false;
+        
+        bool read_sp = false; //Read speical messages(follows, subs and bits).
+        bool normal_messsage = false; //Just for checking and not spamming the backend.
+        bool read_all_chat = false; //Allow Melba to read every message or not.
 
         TwitchClient client;
         TwitchPubSub pubsub_client;
         public Bot()
         {
-            ConnectionCredentials credentials = new ConnectionCredentials("", "");
+            ConnectionCredentials credentials = new ConnectionCredentials(channel_name, oauth_token);
             var clientOptions = new ClientOptions
             {
                 MessagesAllowedInPeriod = 750,
@@ -40,7 +48,7 @@ namespace Melba_Twitch
             };
             WebSocketClient customClient = new WebSocketClient(clientOptions);
             client = new TwitchClient(customClient);
-            client.Initialize(credentials, "");
+            client.Initialize(credentials, channel_name);
 
             pubsub_client = new TwitchPubSub();
 
@@ -56,8 +64,8 @@ namespace Melba_Twitch
             client.OnRaidNotification += Client_Raided;
             pubsub_client.OnFollow += pubsub_Follow;
 
-            pubsub_client.ListenToFollows("");
-            pubsub_client.ListenToRaid("");
+            pubsub_client.ListenToFollows(channel_id);
+            pubsub_client.ListenToRaid(channel_id);
 
             pubsub_client.Connect();
             client.Connect();
@@ -82,7 +90,7 @@ namespace Melba_Twitch
 
         private void onPubsubServiceConnected(object sender, EventArgs e)
         {
-            pubsub_client.SendTopics("");
+            pubsub_client.SendTopics(oauth_token);
         }
         #endregion
 
@@ -95,12 +103,22 @@ namespace Melba_Twitch
             //Console.WriteLine($"{e.Username} has followed. Thank the user melba \n \n");
 
             Special_messages.Add(follow_msg);
+            read_chat(Special_messages[0], 1000, 0);
         }
 
         void Client_MessageReciver(object sender, OnMessageReceivedArgs e)
         {
+
             //Console.Write($"{e.ChatMessage.Username}: {e.ChatMessage.Message} \n \n");
-            Add_message($"{e.ChatMessage.Username}: {e.ChatMessage.Message}");
+            if (read_all_chat)
+            {
+                string chatmesssage = $"{e.ChatMessage.Username}: {e.ChatMessage.Message}";
+                read_chat(chatmesssage,1000,0);
+            }
+            else
+            {
+                Add_message($"{e.ChatMessage.Username}: {e.ChatMessage.Message}");
+            }
         }
 
         void Client_Raided(object sender,OnRaidNotificationArgs e)
@@ -116,7 +134,7 @@ namespace Melba_Twitch
 
         #endregion
 
-        async void Add_message(string text)
+        void Add_message(string text)
         {
 
             if (messages.Count < maxline_count)
@@ -131,108 +149,67 @@ namespace Melba_Twitch
                 messages.Add(text);
             }
 
-            read_chat();
+            Random rand = new Random();
+            int rand_msg = rand.Next(0,messages.Count);
+            normal_messsage = true;
+
+            read_chat(messages[rand_msg],1000,rand_msg);
         }
 
-        //TODO: clean this code. because holy shit it's disgusting.
-        async void read_chat()
+        async void read_chat(string final_msg, int delay,int randomnum)
         {
+
+            using (ClientWebSocket client = new ClientWebSocket())
+            {
+                Uri serviceUri = new Uri("URI");
+                var cTs = new CancellationTokenSource();
+                try
+                {
+                    await client.ConnectAsync(serviceUri, cTs.Token);
+                    while (client.State == WebSocketState.Open)
+                    {
+                        ArraySegment<byte> byteToSend = new ArraySegment<byte>(Encoding.UTF8.GetBytes(final_msg));
+                        await client.SendAsync(byteToSend, WebSocketMessageType.Text, true, cTs.Token);
+                        var responseBuffer = new byte[1024];
+                        var offset = 0;
+                        var packet = 1024;
+                        while (true)
+                        {
+                            ArraySegment<byte> byteRecived = new ArraySegment<byte>(responseBuffer, offset, packet);
+                            WebSocketReceiveResult responce = await client.ReceiveAsync(byteRecived, cTs.Token);
+                            var responceMessage = Encoding.Unicode.GetString(responseBuffer, offset, responce.Count);
+                            Console.WriteLine(responceMessage);
+                            await client.CloseAsync(WebSocketCloseStatus.Empty, null, cTs.Token);
+                            if (responce.EndOfMessage)
+                                break;
+                        }
+                    }
+                }
+                catch (WebSocketException e)
+                {
+                    Console.WriteLine(e.Message);
+                }
+
+            }
 
             if (read_sp)
             {
-                if (Special_messages.Count <= 0) 
-                {
-                    read_sp = false;
-                    sp_timer();
-                    return;
-                }
-
-                using (ClientWebSocket client = new ClientWebSocket())
-                {
-                    Uri serviceUri = new Uri("URI");
-                    var cTs = new CancellationTokenSource();
-                    try
-                    {
-                        await client.ConnectAsync(serviceUri, cTs.Token);
-                        string final_msg = Special_messages[0].ToString();
-                        while (client.State == WebSocketState.Open)
-                        {
-                            ArraySegment<byte> byteToSend = new ArraySegment<byte>(Encoding.UTF8.GetBytes(final_msg));
-                            await client.SendAsync(byteToSend, WebSocketMessageType.Text, true, cTs.Token);
-                            var responseBuffer = new byte[1024];
-                            var offset = 0;
-                            var packet = 1024;
-                            while (true)
-                            {
-                                ArraySegment<byte> byteRecived = new ArraySegment<byte>(responseBuffer, offset, packet);
-                                WebSocketReceiveResult responce = await client.ReceiveAsync(byteRecived, cTs.Token);
-                                var responceMessage = Encoding.Unicode.GetString(responseBuffer, offset, responce.Count);
-                                Console.WriteLine(responceMessage);
-                                await client.CloseAsync(WebSocketCloseStatus.Empty, null, cTs.Token);
-                                if (responce.EndOfMessage)
-                                    break;
-                            }
-                        }
-                    }
-                    catch (WebSocketException e)
-                    {
-                        Console.WriteLine(e.Message);
-                    }
-                }
-
-                Special_messages.RemoveAt(0);
                 read_sp = false;
-
-                //Create a cooldown.
-                sp_timer();
             }
-            else
+
+            if (normal_messsage && !read_all_chat)
             {
-                Random random = new Random();
-                int rand_msg = random.Next(0, messages.Count);
-
-                //Console.WriteLine(messages[rand_msg]);
-                using (ClientWebSocket client = new ClientWebSocket())
-                {
-                    Uri serviceUri = new Uri("URI");
-                    var cTs = new CancellationTokenSource();
-                    try
-                    {
-                        await client.ConnectAsync(serviceUri, cTs.Token);
-                        string final_msg = messages[rand_msg].ToString();
-                        while (client.State == WebSocketState.Open)
-                        {
-                            ArraySegment<byte> byteToSend = new ArraySegment<byte>(Encoding.UTF8.GetBytes(final_msg));
-                            await client.SendAsync(byteToSend, WebSocketMessageType.Text, true, cTs.Token);
-                            var responseBuffer = new byte[1024];
-                            var offset = 0;
-                            var packet = 1024;
-                            while (true)
-                            {
-                                ArraySegment<byte> byteRecived = new ArraySegment<byte>(responseBuffer, offset, packet);
-                                WebSocketReceiveResult responce = await client.ReceiveAsync(byteRecived, cTs.Token);
-                                var responceMessage = Encoding.Unicode.GetString(responseBuffer, offset, responce.Count);
-                                Console.WriteLine(responceMessage);
-                                await client.CloseAsync(WebSocketCloseStatus.Empty, null, cTs.Token);
-                                if (responce.EndOfMessage)
-                                    break;
-                            }
-                            break;
-                        }
-                    }
-                    catch (WebSocketException e)
-                    {
-                        Console.WriteLine(e.Message);
-                    }
-                }
-
-                messages.Remove(messages[rand_msg]);
+                messages.Remove(messages[randomnum]);
+                normal_messsage = true;
             }
+
+            sp_timer(delay);
+            
         }
 
-        async void sp_timer()
+        async void sp_timer(int time)
         {
-            await Task.Delay(5000);
+            await Task.Delay(time);
             read_sp = true;
         }
 

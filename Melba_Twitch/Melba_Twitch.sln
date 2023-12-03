@@ -5,6 +5,8 @@ VisualStudioVersion = 17.5.33627.172
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Melba_Twitch", "Melba_Twitch.csproj", "{AF529271-11D6-4DFE-BFBC-D7A5DB648051}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MelbaTwitch_Server", "..\..\MelbaTwitch_Server\MelbaTwitch_Server.csproj", "{0D7586B6-1ACD-4F2D-AABB-54CAB86B185D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{AF529271-11D6-4DFE-BFBC-D7A5DB648051}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AF529271-11D6-4DFE-BFBC-D7A5DB648051}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AF529271-11D6-4DFE-BFBC-D7A5DB648051}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0D7586B6-1ACD-4F2D-AABB-54CAB86B185D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0D7586B6-1ACD-4F2D-AABB-54CAB86B185D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0D7586B6-1ACD-4F2D-AABB-54CAB86B185D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0D7586B6-1ACD-4F2D-AABB-54CAB86B185D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
